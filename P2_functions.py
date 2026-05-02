@@ -6,21 +6,21 @@ from coastal_data import CD_geometry, CD_statistics
 
 import pdb
 
-# ===================================================================================
-# Functions for notebooks 12 and 13 (Terschelling)
-# ===================================================================================
-
-def get_all_volumes_Ters(jarkus_red, kf_interp, rts_interp, transect_polys, epsg_local):
-    volumes_jarkus = pd.DataFrame(index=[int(_) for _ in jarkus_red.drop(columns='geometry').columns])
-    volumes_kf = volumes_jarkus.copy()
-    volumes_rts = volumes_jarkus.copy()    
+def get_all_volumes(vali_red, kf_interp, rts_interp, transect_polys, epsg_local):
+    volumes_vali = pd.DataFrame(index=[int(_) for _ in vali_red.drop(columns='geometry').columns])
+    volumes_kf = volumes_vali.copy()
+    volumes_rts = volumes_vali.copy()    
     
     for idx_transect in transect_polys.keys():
-        volumes_jarkus[idx_transect] = CD_geometry.compute_volume_changes(jarkus_red, transect_polys[idx_transect], epsg_out=epsg_local)
+        volumes_vali[idx_transect] = CD_geometry.compute_volume_changes(vali_red, transect_polys[idx_transect], epsg_out=epsg_local)
         volumes_kf[idx_transect] = CD_geometry.compute_volume_changes(kf_interp, transect_polys[idx_transect], epsg_out=epsg_local)
         volumes_rts[idx_transect] = CD_geometry.compute_volume_changes(rts_interp, transect_polys[idx_transect], epsg_out=epsg_local)
         
-    return volumes_jarkus, volumes_kf, volumes_rts
+    return volumes_vali, volumes_kf, volumes_rts
+
+# ===================================================================================
+# Functions for notebooks 12 and 13 (Terschelling)
+# ===================================================================================
 
 def split_Ters(volumes_jarkus, volumes_kf, volumes_rts):
     # West Terschelling erosive section
@@ -113,4 +113,30 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
         for key, value in pvalues.items():
             print(key, round(value,2))
         
+    return trends, corr, pvalues, rmse
+
+# ===================================================================================
+# Functions for notebooks 22 and 23 (Duck)
+# ===================================================================================
+
+def volume_stats_Duck(volumes_vali, volumes_kf, volumes_rts, print_output=False):
+    rmse = CD_statistics.RMSE_timeseries(volumes_rts.mean(axis=1), volumes_vali.mean(axis=1))
+    corr, pvalues = stats.pearsonr(volumes_rts.mean(axis=1), volumes_vali.mean(axis=1))
+
+    trends = {}
+    years = volumes_vali.index.values
+    trends['vali'], _, _ = CD_statistics.compute_trend_with_error(years, volumes_vali.mean(axis=1))
+    trends['kf'], _, _ = CD_statistics.compute_trend_with_error(years, volumes_kf.mean(axis=1))
+    trends['rts'], _, _ = CD_statistics.compute_trend_with_error(years, volumes_rts.mean(axis=1))
+
+    # Print output
+    if print_output:
+        diff = trends['rts'] - trends['vali']
+        trend_diff_perc = (np.abs(diff) / np.abs(trends['vali'])) * 100
+        print('Trend differences in % of total trend:', round(trend_diff_perc,2))
+
+        rmse_perc = (np.abs(rmse)/np.abs(volumes_vali.mean().mean())) * 100
+        print('RMSE relative to total mean volume:', round(rmse_perc,1))
+
+        print(f'Correlation:{round(corr,2)}, p: {round(pvalues,2)}')
     return trends, corr, pvalues, rmse
