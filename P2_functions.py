@@ -140,3 +140,40 @@ def volume_stats_Duck(volumes_vali, volumes_kf, volumes_rts, print_output=False)
 
         print(f'Correlation:{round(corr,2)}, p: {round(pvalues,2)}')
     return trends, corr, pvalues, rmse
+
+# ===================================================================================
+# Functions for notebooks 32 and 33 (Narrabeen)
+# ===================================================================================
+
+def volume_stats_Narrabeen(volumes_vali, volumes_kf, volumes_rts, profile_polys_red, print_output=True):
+    rmse = {}
+    rmse_perc = {}
+    corr = {}
+    pvalues = {}
+    trends = {}
+    trend_diff_perc = {}
+    
+    for area in profile_polys_red.keys():
+        rmse[area] = CD_statistics.RMSE_timeseries(volumes_rts[str(area)], volumes_vali[str(area)])
+        rmse_perc[area] = (np.abs(rmse[area])/np.abs(volumes_vali[str(area)].mean())) * 100
+        corr[area], pvalues[area] = stats.pearsonr(volumes_rts[str(area)], volumes_vali[str(area)])
+
+        trends[f'vali_{area}'], _, _ = CD_statistics.compute_trend_with_error(volumes_vali.index.values.astype(int), volumes_vali[str(area)].values)
+        trends[f'kf_{area}'], _, _ = CD_statistics.compute_trend_with_error(volumes_kf.index.values.astype(int), volumes_kf[str(area)].values)
+        trends[f'rts_{area}'], _, _ = CD_statistics.compute_trend_with_error(volumes_rts.index.values.astype(int), volumes_rts[str(area)].values)
+
+        trend_diff = trends[f'rts_{area}'] - trends[f'vali_{area}']
+        # both trends are neg/pos: perc as quotient of absolute trend diff
+        if np.sign(trends[f'rts_{area}']) == np.sign(trends[f'vali_{area}']):
+            trend_diff_perc[area] = np.abs(trend_diff) / np.abs(trends[f'vali_{area}']) * 100
+        # trends have different signs: perc should be negative
+        else:
+            trend_diff_perc[area] = trend_diff / trends[f'vali_{area}'] * 100
+
+    if print_output:
+        for area in profile_polys_red.keys():
+            print(area, 'Trend differences in % of total trend:', round(trend_diff_perc[area],2))
+            print(area, 'RMSE relative to total mean volume:', round(rmse_perc[area],1))
+            print(area, f'Correlation:{round(corr[area],2)}, p: {round(pvalues[area],2)}', '\n')
+
+    return trends, corr, pvalues, rmse
