@@ -56,7 +56,7 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
     rmse['west'] = CD_statistics.RMSE_timeseries(volumes_rts_west.mean(axis=1), volumes_jarkus_west.mean(axis=1))
     rmse['center'] = CD_statistics.RMSE_timeseries(volumes_rts_middle.mean(axis=1), volumes_jarkus_middle.mean(axis=1))
     rmse['east'] = CD_statistics.RMSE_timeseries(volumes_rts_east.mean(axis=1), volumes_jarkus_east.mean(axis=1))
-    
+  
     # Correlation
     corr['all'], pvalues['all'] = stats.pearsonr(volumes_rts.mean(axis=1), volumes_jarkus.mean(axis=1))
     corr['west'], pvalues['west'] = stats.pearsonr(volumes_rts_west.mean(axis=1), volumes_jarkus_west.mean(axis=1))
@@ -83,6 +83,7 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
     
     trend_diff = {}
     trend_diff_perc = {}
+    rmse_perc = {}
     for area in ['all', 'west', 'center', 'east']:
         trend_diff[area] = trends[f'rts_{area}'] - trends[f'jarkus_{area}']
 
@@ -92,6 +93,9 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
         else:
             # trends have different signs: perc should be negative
             trend_diff_perc[area] = (trend_diff[area] / trends[f'jarkus_{area}']) * 100
+
+        total_mean_vol = np.nanmean(volumes_jarkus.mean(axis=1))
+        rmse_perc[area] = (np.abs(value) / np.abs(total_mean_vol)) * 100
     
     # Print output
     if print_output:
@@ -100,10 +104,8 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
             print(key, round(value,2))
 
         print('RMSE relative to total mean volume:')
-        for key, value in rmse.items():
-            total_mean_vol = np.nanmean(volumes_jarkus.mean(axis=1))
-            perc = (np.abs(value) / np.abs(total_mean_vol)) * 100
-            print(key, round(perc,1))
+        for key, value in rmse_perc.items():
+            print(key, round(value,1))
 
         print('Correlation:')
         for key, value in corr.items():
@@ -113,14 +115,16 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
         for key, value in pvalues.items():
             print(key, round(value,2))
         
-    return trends, corr, pvalues, rmse
+    return trends, trend_diff_perc, corr, pvalues, rmse, rmse_perc
 
 # ===================================================================================
-# Functions for notebooks 22 and 23 (Duck)
+# Functions for notebooks 22 and 23 (Duck) and 
 # ===================================================================================
 
-def volume_stats_Duck(volumes_vali, volumes_kf, volumes_rts, print_output=False):
+def volume_stats_averaged(volumes_vali, volumes_kf, volumes_rts, print_output=False):
     rmse = CD_statistics.RMSE_timeseries(volumes_rts.mean(axis=1), volumes_vali.mean(axis=1))
+    rmse_perc = (np.abs(rmse)/np.abs(volumes_vali.mean().mean())) * 100
+    
     corr, pvalues = stats.pearsonr(volumes_rts.mean(axis=1), volumes_vali.mean(axis=1))
 
     trends = {}
@@ -129,17 +133,16 @@ def volume_stats_Duck(volumes_vali, volumes_kf, volumes_rts, print_output=False)
     trends['kf'], _, _ = CD_statistics.compute_trend_with_error(years, volumes_kf.mean(axis=1))
     trends['rts'], _, _ = CD_statistics.compute_trend_with_error(years, volumes_rts.mean(axis=1))
 
+    diff = trends['rts'] - trends['vali']
+    trend_diff_perc = (np.abs(diff) / np.abs(trends['vali'])) * 100
+
     # Print output
-    if print_output:
-        diff = trends['rts'] - trends['vali']
-        trend_diff_perc = (np.abs(diff) / np.abs(trends['vali'])) * 100
-        print('Trend differences in % of total trend:', round(trend_diff_perc,2))
-
-        rmse_perc = (np.abs(rmse)/np.abs(volumes_vali.mean().mean())) * 100
+    if print_output:        
+        print('Trend differences in % of total trend:', round(trend_diff_perc,2))        
         print('RMSE relative to total mean volume:', round(rmse_perc,1))
-
         print(f'Correlation:{round(corr,2)}, p: {round(pvalues,2)}')
-    return trends, corr, pvalues, rmse
+        
+    return trends, trend_diff_perc, corr, pvalues, rmse, rmse_perc
 
 # ===================================================================================
 # Functions for notebooks 32 and 33 (Narrabeen)
@@ -176,4 +179,5 @@ def volume_stats_Narrabeen(volumes_vali, volumes_kf, volumes_rts, profile_polys_
             print(area, 'RMSE relative to total mean volume:', round(rmse_perc[area],1))
             print(area, f'Correlation:{round(corr[area],2)}, p: {round(pvalues[area],2)}', '\n')
 
-    return trends, corr, pvalues, rmse
+    return trends, trend_diff_perc, corr, pvalues, rmse, rmse_perc
+    
