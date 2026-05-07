@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 
+from matplotlib.lines import Line2D
+
 from coastal_data import CD_geometry, CD_statistics
 
 import pdb
@@ -95,7 +97,7 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
             trend_diff_perc[area] = (trend_diff[area] / trends[f'jarkus_{area}']) * 100
 
         total_mean_vol = np.nanmean(volumes_jarkus.mean(axis=1))
-        rmse_perc[area] = (np.abs(value) / np.abs(total_mean_vol)) * 100
+        rmse_perc[area] = (np.abs(rmse[area]) / np.abs(total_mean_vol)) * 100
     
     # Print output
     if print_output:
@@ -118,7 +120,7 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
     return trends, trend_diff_perc, corr, pvalues, rmse, rmse_perc
 
 # ===================================================================================
-# Functions for notebooks 22 and 23 (Duck) and 
+# Functions for notebooks 22 and 23 (Duck) and 32 and 33 (Narrabeen)
 # ===================================================================================
 
 def volume_stats_averaged(volumes_vali, volumes_kf, volumes_rts, print_output=False):
@@ -180,4 +182,85 @@ def volume_stats_Narrabeen(volumes_vali, volumes_kf, volumes_rts, profile_polys_
             print(area, f'Correlation:{round(corr[area],2)}, p: {round(pvalues[area],2)}', '\n')
 
     return trends, trend_diff_perc, corr, pvalues, rmse, rmse_perc
+
+# ===================================================================================
+# Plot functions for notebooks 12, 22 and 32 (parameter tuning)
+# ===================================================================================
+
+def plot_legend(ax, c_list, ls_list, factors, std_init_values):
+    legend_elements = [
+        Line2D([0], [0], color='none', label='$\\bf{Color: \\sigma_q}$', lw=0, ms=0),  # Subtitle
+        
+        Line2D([0], [0], color=c_list[0], label=f'$\\sigma_{{q}}$ = {factors[0]}$\\cdot \\sigma_{{obs}}$ m'),
+        Line2D([0], [0], color=c_list[1], label=f'$\\sigma_{{q}}$ = {factors[1]}$\\cdot \\sigma_{{obs}}$ m'),
+        Line2D([0], [0], color=c_list[2], label=f'$\\sigma_{{q}}$ = {factors[2]}$\\cdot \\sigma_{{obs}}$ m'),
+
+        Line2D([0], [0], color='none', label='', lw=0, ms=0), # dummy for white space
+        Line2D([0], [0], color='none', label='$\\bf{Linestyle: \\sigma_{{init}}}$', lw=0, ms=0),  # Subtitle
+
+        Line2D([0], [0], color='grey', ls=ls_list[0], label=f'$\\sigma_{{init}}$ = {std_init_values[0]} m'),
+        Line2D([0], [0], color='grey', ls=ls_list[1], label=f'$\\sigma_{{init}}$ = {std_init_values[1]} m'),
+        Line2D([0], [0], color='grey', ls=ls_list[2], label=f'$\\sigma_{{init}}$ = {std_init_values[2]} m'),
+
+        Line2D([0], [0], color='none', label='', lw=0, ms=0), # dummy for white space
+
+        # Line2D([0], [0], marker='o', lw=0, ms=10, color='grey', label='p-value < 0.05')
+    ]
+    ax.legend(handles=legend_elements, bbox_to_anchor=(1,1.1))
+
+def plot_vol_stats(ax, data, pvalues_df, factors, std_init_values, param_df, ls_list, c_list, ylabel, title, corr=False, plot_zero=False, ylim=None):
+    for f, factor in enumerate(factors):
+        for g, std_init in enumerate(std_init_values):
+            idx, = np.where((param_df.factor == factor) & (param_df.std_init == std_init))
+            ax.plot(param_df.loc[idx, 'sigma_l'], data.loc[idx], ls=ls_list[g], c=c_list[f], marker='.')
+            
+            if corr:
+                pvalues_box = np.where(pvalues_df.T.loc[idx] < 0.05)[0]
+                ax.plot(param_df.loc[idx[pvalues_box], 'sigma_l'], data.loc[idx[pvalues_box]].values,
+                        marker='o', lw=0, ms=10, color='grey', label='p-value < 0.05')
+                ax.legend(handles=[Line2D([0], [0], marker='o', lw=0, ms=10, color='grey', label='p-value < 0.05')]) #, loc='lower right')
+
+            if plot_zero:
+                ax.axhline(y=0, color='grey')            
+
+    if ylim != None:
+        ax.set_ylim(ylim[0], ylim[1])
+
+    # if not corr:
+    #     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        # ax.ticklabel_format(useOffset=False, style='plain')
+    
+    ax.set_xlabel(r'$\sigma_{l}$ [m]')
+    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontsize=22)
+    ax.grid()
+
+def mark_selected_param(ax, idx_selected, data, param_df):
+    params_selected = param_df.iloc[idx_selected]
+    ax.plot(params_selected['sigma_l'], data.iloc[idx_selected], 'o', c='None', markeredgecolor='red', ms=10, markeredgewidth=2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
