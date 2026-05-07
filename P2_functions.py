@@ -105,11 +105,11 @@ def volume_stats_Ters(volumes_jarkus, volumes_kf, volumes_rts, volumes_jarkus_we
         for key, value in trend_diff_perc.items():
             print(key, round(value,2))
 
-        print('RMSE relative to total mean volume:')
+        print('\nRMSE relative to total mean volume:')
         for key, value in rmse_perc.items():
             print(key, round(value,1))
 
-        print('Correlation:')
+        print('\nCorrelation:')
         for key, value in corr.items():
             print(key, round(value,2))
 
