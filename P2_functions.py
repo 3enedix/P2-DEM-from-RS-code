@@ -198,9 +198,9 @@ def plot_legend(ax, c_list, ls_list, factors, std_init_values):
         Line2D([0], [0], color='none', label='', lw=0, ms=0), # dummy for white space
         Line2D([0], [0], color='none', label='$\\bf{Linestyle: \\sigma_{{init}}}$', lw=0, ms=0),  # Subtitle
 
-        Line2D([0], [0], color='grey', ls=ls_list[0], label=f'$\\sigma_{{init}}$ = {std_init_values[0]} m'),
-        Line2D([0], [0], color='grey', ls=ls_list[1], label=f'$\\sigma_{{init}}$ = {std_init_values[1]} m'),
-        Line2D([0], [0], color='grey', ls=ls_list[2], label=f'$\\sigma_{{init}}$ = {std_init_values[2]} m'),
+        Line2D([0], [0], color='grey', ls=ls_list[0], label=f'$\\sigma_{{x_0}}$ = {std_init_values[0]} m'),
+        Line2D([0], [0], color='grey', ls=ls_list[1], label=f'$\\sigma_{{x_0}}$ = {std_init_values[1]} m'),
+        Line2D([0], [0], color='grey', ls=ls_list[2], label=f'$\\sigma_{{x_0}}$ = {std_init_values[2]} m'),
 
         Line2D([0], [0], color='none', label='', lw=0, ms=0), # dummy for white space
 
