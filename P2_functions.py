@@ -135,9 +135,15 @@ def volume_stats_averaged(volumes_vali, volumes_kf, volumes_rts, print_output=Fa
     trends['kf'], _, _ = CD_statistics.compute_trend_with_error(years, volumes_kf.mean(axis=1))
     trends['rts'], _, _ = CD_statistics.compute_trend_with_error(years, volumes_rts.mean(axis=1))
 
-    diff = trends['rts'] - trends['vali']
-    trend_diff_perc = (np.abs(diff) / np.abs(trends['vali'])) * 100
-
+    trend_diff = trends['rts'] - trends['vali']
+    
+    # both trends are neg/pos: perc as quotient of absolute trend diff
+    if np.sign(trends['rts']) == np.sign(trends['vali']):
+        trend_diff_perc = np.abs(trend_diff) / np.abs(trends['vali']) * 100
+    # trends have different signs: perc should be negative
+    else:
+        trend_diff_perc = trend_diff / trends['vali'] * 100
+        
     # Print output
     if print_output:        
         print('Trend differences in % of total trend:', round(trend_diff_perc,2))        
